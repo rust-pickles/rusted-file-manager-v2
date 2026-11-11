@@ -26,8 +26,11 @@ jobs:
           cargo test --workspace --no-fail-fast 2>&1 | Tee-Object -FilePath rust-test.log
           $code = $LASTEXITCODE
           if ($code -ne 0) {
-            $tail = ((Get-Content rust-test.log -Tail 60) -join "`n").Replace('%', '%25').Replace("`r", '%0D').Replace("`n", '%0A')
-            Write-Output "::error::Rust test diagnostics (last 60 lines):%0A$tail"
+            $matches = Select-String -Path rust-test.log -Pattern '^---- .* stdout ----$', 'panicked at', '^assertion', '^  left:', '^ right:', '^test result:', '^error:' -Context 0,3
+            foreach ($match in $matches) {
+              $text = ($match.ToString()).Replace('%', '%25').Replace("`r", '%0D').Replace("`n", '%0A')
+              Write-Output "::error::$text"
+            }
           }
           exit $code
 
