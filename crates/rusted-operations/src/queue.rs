@@ -6,7 +6,7 @@ use crossbeam_channel::{unbounded, Receiver, Sender};
 use std::collections::HashMap;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
-use std::time::Instant;
+use std::time::{Duration, Instant};
 use uuid::Uuid;
 
 /// More than a handful of parallel disk writers only hurts throughput.
@@ -174,13 +174,13 @@ fn run_job(job: &Job, events: &Sender<OperationProgress>, history: &Arc<Mutex<Ve
             progress.error = Some(error.to_string());
         }
     }
-    let _ = events.send(progress.clone());
     if let Ok(mut entries) = history.lock() {
-        entries.push(progress);
+        entries.push(progress.clone());
         if entries.len() > 100 {
             entries.remove(0);
         }
     }
+    let _ = events.send(progress);
 }
 
 fn execute(
@@ -234,7 +234,15 @@ fn execute(
                     request.destination.clone()
                 };
                 progress(done, Some(source));
-                let mut report = |_bytes: u64| {};
+                // Relay actual byte-counter updates while copying a large item,
+                // throttled so the receiver is not flooded for fast transfers.
+                let mut last_report = None;
+                let mut report = |_bytes: u64| {
+                    if last_report.map_or(true, |last: Instant| last.elapsed() >= Duration::from_millis(100)) {
+                        progress(done, Some(source));
+                        last_report = Some(Instant::now());
+                    }
+                };
                 match request.kind {
                     OperationKind::Copy => copy_path(source, &destination, request.conflict, control, &mut report)?,
                     OperationKind::Move => move_path(source, &destination, request.conflict, control, &mut report)?,
@@ -289,6 +297,23 @@ mod tests {
         assert_eq!(std::fs::read_to_string(target.join("src.txt")).unwrap(), "payload");
         assert_eq!(queue.history().len(), 1);
         assert!(!queue.is_active(id));
+    }
+
+    #[test]
+    fn reports_bytes_before_a_large_single_file_finishes() {
+        let dir = tempfile::tempdir().unwrap();
+        let source = dir.path().join("large.bin");
+        std::fs::write(&source, vec![42u8; 1024 * 1024]).unwrap();
+        let target = dir.path().join("out");
+        std::fs::create_dir(&target).unwrap();
+        let queue = OperationQueue::new(1);
+        let request = OperationRequest::new(OperationKind::Copy, vec![source], target);
+        let id = queue.submit(request, Arc::new(OperationControl::default())).unwrap();
+        let event = drain_until(&queue, |event| event.id == id && event.status == OperationStatus::Running && event.bytes_done > 0);
+        assert_eq!(event.completed_items, 0);
+        assert!(event.bytes_done > 0);
+        let done = drain_until(&queue, |event| event.id == id && event.status.is_finished());
+        assert_eq!(done.status, OperationStatus::Completed);
     }
 
     #[test]
