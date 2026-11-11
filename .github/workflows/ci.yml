@@ -21,7 +21,15 @@ jobs:
       - name: Check workspace
         run: cargo check --workspace --all-targets
       - name: Test workspace
-        run: cargo test --workspace
+        shell: pwsh
+        run: |
+          cargo test --workspace 2>&1 | Tee-Object -FilePath rust-test.log
+          $code = $LASTEXITCODE
+          if ($code -ne 0) {
+            $tail = ((Get-Content rust-test.log -Tail 120) -join "`n").Replace('%', '%25').Replace("`r", '%0D').Replace("`n", '%0A')
+            Write-Output "::error::Rust test diagnostics (last 120 lines):%0A$tail"
+          }
+          exit $code
 
   frontend:
     runs-on: windows-latest
