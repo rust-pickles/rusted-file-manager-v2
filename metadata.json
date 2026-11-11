@@ -1,0 +1,6 @@
+{
+  "name": "Atlas File Manager",
+  "description": "Next-generation desktop file manager with Miller columns, multi-tab browsing, quick preview, and command palette.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
