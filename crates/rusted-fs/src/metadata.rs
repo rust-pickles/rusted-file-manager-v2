@@ -50,9 +50,10 @@ fn is_hidden(path: &Path, _: &Metadata) -> bool {
 }
 
 #[cfg(windows)]
-fn is_hidden(_: &Path, metadata: &Metadata) -> bool {
+fn is_hidden(path: &Path, metadata: &Metadata) -> bool {
     use std::os::windows::fs::MetadataExt;
     metadata.file_attributes() & FILE_ATTRIBUTE_HIDDEN != 0
+        || path.file_name().is_some_and(|name| name.to_string_lossy().starts_with('.'))
 }
 
 #[cfg(not(any(unix, windows)))]

@@ -24,7 +24,7 @@ pub fn validate_directory(path: &Path) -> Result<PathBuf, PathError> {
 
 pub fn safe_child(parent: &Path, name: &str) -> Result<PathBuf, PathError> {
     let candidate = Path::new(name);
-    if name.is_empty() || candidate.is_absolute() || candidate.components().any(|c| !matches!(c, Component::Normal(_))) {
+    if name.is_empty() || candidate.is_absolute() || !matches!((candidate.components().next(), candidate.components().nth(1)), (Some(Component::Normal(_)), None)) {
         return Err(PathError::InvalidTraversal);
     }
     Ok(parent.join(candidate))

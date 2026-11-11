@@ -141,16 +141,18 @@ impl UndoStack {
     }
 
     pub fn undo(&mut self) -> Result<String, OperationError> {
-        let dated = self.undo.pop().ok_or_else(|| OperationError::NotReversible("nothing to undo".into()))?;
+        let dated = self.undo.last().ok_or_else(|| OperationError::NotReversible("nothing to undo".into()))?;
         dated.entry.undo()?;
+        let dated = self.undo.pop().expect("entry remains until undo succeeds");
         let label = dated.entry.label();
         self.redo.push(dated);
         Ok(label)
     }
 
     pub fn redo(&mut self) -> Result<String, OperationError> {
-        let dated = self.redo.pop().ok_or_else(|| OperationError::NotReversible("nothing to redo".into()))?;
+        let dated = self.redo.last().ok_or_else(|| OperationError::NotReversible("nothing to redo".into()))?;
         dated.entry.redo()?;
+        let dated = self.redo.pop().expect("entry remains until redo succeeds");
         let label = dated.entry.label();
         self.undo.push(dated);
         Ok(label)
@@ -192,6 +194,7 @@ mod tests {
         stack.record(JournalEntry::Rename { from, to: to.clone() });
         fs::remove_file(&to).unwrap();
         assert!(stack.undo().is_err());
+        assert!(stack.can_undo(), "a failed undo must remain available for retry");
         // The failed entry is not silently dropped from history semantics.
         assert!(!stack.can_redo());
     }

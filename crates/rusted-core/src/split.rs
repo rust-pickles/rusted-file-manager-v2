@@ -200,9 +200,11 @@ impl SplitNode {
         match self {
             Self::Leaf(_) => false,
             Self::Split { ratio: current, first: a, second: b, .. } => {
-                let in_a = a.pane(first).is_some() && a.pane(second).is_some();
-                let in_b = b.pane(first).is_some() && b.pane(second).is_some();
-                if in_a || in_b {
+                let first_in_a = a.pane(first).is_some();
+                let second_in_a = a.pane(second).is_some();
+                let first_in_b = b.pane(first).is_some();
+                let second_in_b = b.pane(second).is_some();
+                if (first_in_a && second_in_b) || (second_in_a && first_in_b) {
                     *current = ratio.clamp(MIN_PANE_RATIO, 1.0 - MIN_PANE_RATIO);
                     true
                 } else {
@@ -228,6 +230,7 @@ impl SplitNode {
         }
         let taken = std::mem::replace(self, Self::Leaf(Pane::empty()));
         let (mut tree, removed) = remove_leaf(taken, id);
+        tree.prune();
         let Some(mut pane) = removed else {
             *self = tree;
             return Err(SplitError::PaneNotFound(id));

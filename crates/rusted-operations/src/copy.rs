@@ -61,9 +61,6 @@ pub fn copy_file(
     if !source.is_file() {
         return Err(OperationError::MissingSource(source.into()));
     }
-    if source == destination {
-        return Err(OperationError::Conflict(destination.to_path_buf()));
-    }
     let Some(destination) = resolve_destination(destination, policy)? else {
         return Ok(None);
     };
