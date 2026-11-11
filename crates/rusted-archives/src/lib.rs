@@ -64,7 +64,7 @@ pub trait Archive {
         if let Some(parent) = target.parent() {
             std::fs::create_dir_all(parent).map_err(|source| ArchiveError::Io { path: parent.into(), source })?;
         }
-        if path.ends_with('/') {
+        if self.entries().iter().any(|entry| entry.path == path && entry.is_dir) {
             std::fs::create_dir_all(&target).map_err(|source| ArchiveError::Io { path: target.clone(), source })?;
             return Ok(target);
         }
