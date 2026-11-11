@@ -81,6 +81,8 @@ export interface FileOperationJob {
   progress: number; // 0 to 100
   totalBytes: number;
   processedBytes: number;
+  progressAvailable?: boolean;
+  error?: string;
   speed: string; // e.g. "128 MB/s"
   status: 'running' | 'completed' | 'paused' | 'cancelled' | 'error';
   startedAt: string;

@@ -105,7 +105,6 @@ interface AppState {
 
   // Operations Queue
   operationJobs: FileOperationJob[];
-  cancelOperation: (jobId: string) => void;
 
   // Current directory items (cached for active tab)
   directoryItems: FileItem[];
@@ -525,10 +524,11 @@ export const useAppStore = create<AppState>((set, get) => ({
       title: `${clipboard.operation === 'copy' ? 'Copying' : 'Moving'} ${clipboard.items.length} item(s)`,
       sourcePaths: srcPaths,
       destinationPath: dest,
-      progress: 5,
+      progress: 0,
       totalBytes,
-      processedBytes: Math.floor(totalBytes * 0.05),
-      speed: '142 MB/s',
+      processedBytes: 0,
+      speed: '',
+      progressAvailable: false,
       status: 'running',
       startedAt: new Date().toISOString(),
     };
@@ -538,41 +538,26 @@ export const useAppStore = create<AppState>((set, get) => ({
       isOperationQueueOpen: true,
     }));
 
-    // Simulate transfer progress for authentic desktop feel
-    const interval = setInterval(() => {
-      set((state) => {
-        const jobs = state.operationJobs.map((j) => {
-          if (j.id !== jobId) return j;
-          const nextProg = Math.min(100, j.progress + 25);
-          return {
-            ...j,
-            progress: nextProg,
-            processedBytes: Math.floor(totalBytes * (nextProg / 100)),
-            status: nextProg >= 100 ? ('completed' as const) : ('running' as const),
-          };
-        });
-        return { operationJobs: jobs };
-      });
-    }, 200);
-
-    setTimeout(async () => {
-      clearInterval(interval);
+    try {
       if (clipboard.operation === 'copy') {
         await fileSystemService.copyItems(srcPaths, dest);
       } else {
         await fileSystemService.moveItems(srcPaths, dest);
         set({ clipboard: null });
       }
-      get().loadCurrentDirectory();
-    }, 900);
-  },
-
-  cancelOperation: (jobId: string) => {
-    set((state) => ({
-      operationJobs: state.operationJobs.map((j) =>
-        j.id === jobId ? { ...j, status: 'cancelled' as const } : j
-      ),
-    }));
+      set((state) => ({
+        operationJobs: state.operationJobs.map((job) =>
+          job.id === jobId ? { ...job, status: 'completed' as const } : job
+        ),
+      }));
+      await get().loadCurrentDirectory();
+    } catch (error) {
+      set((state) => ({
+        operationJobs: state.operationJobs.map((job) =>
+          job.id === jobId ? { ...job, status: 'error' as const, error: String(error) } : job
+        ),
+      }));
+    }
   },
 
   loadCurrentDirectory: async () => {

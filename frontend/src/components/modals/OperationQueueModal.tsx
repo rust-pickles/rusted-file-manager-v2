@@ -8,7 +8,6 @@ export const OperationQueueModal: React.FC = () => {
     isOperationQueueOpen,
     toggleOperationQueue,
     operationJobs,
-    cancelOperation,
   } = useAppStore();
 
   if (!isOperationQueueOpen) return null;
@@ -68,13 +67,10 @@ export const OperationQueueModal: React.FC = () => {
                         </span>
                       ) : isCancelled ? (
                         <span className="text-rose-400 font-mono text-[11px]">Cancelled</span>
+                      ) : job.status === 'error' ? (
+                        <span className="text-rose-400 font-mono text-[11px]">Failed</span>
                       ) : (
-                        <button
-                          onClick={() => cancelOperation(job.id)}
-                          className="px-2.5 py-1 rounded-[6px] bg-[var(--bg-surface)] hover:bg-rose-500/20 text-[var(--text-secondary)] hover:text-rose-400 border border-[var(--border-subtle)] transition-colors text-[10px]"
-                        >
-                          Cancel
-                        </button>
+                        <span className="text-[var(--text-muted)] font-mono text-[11px]">Running</span>
                       )}
                     </div>
                   </div>
@@ -93,10 +89,14 @@ export const OperationQueueModal: React.FC = () => {
                     />
                   </div>
 
+                  {job.error && <p role="alert" className="text-rose-400 break-words">{job.error}</p>}
+
                   {/* Telemetry info */}
                   <div className="flex justify-between items-center text-[10px] text-[var(--text-muted)] font-mono">
                     <span>
-                      {formatBytes(job.processedBytes)} / {formatBytes(job.totalBytes)} ({job.progress}%)
+                      {job.progressAvailable
+                        ? `${formatBytes(job.processedBytes)} / ${formatBytes(job.totalBytes)} (${job.progress}%)`
+                        : 'Progress unavailable'}
                     </span>
                     {isRunning && <span className="text-[var(--text-primary)] font-semibold">{job.speed}</span>}
                   </div>

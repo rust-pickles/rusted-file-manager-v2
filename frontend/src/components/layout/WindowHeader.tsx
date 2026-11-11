@@ -30,6 +30,8 @@ export const WindowHeader: React.FC = () => {
       ? Math.round(activeJobs.reduce((acc, j) => acc + j.progress, 0) / activeJobs.length)
       : 0;
 
+  const progressAvailable = activeJobs.every((job) => job.progressAvailable);
+
   const isDark = theme !== 'snow' && theme !== 'warm-sand';
 
   return (
@@ -133,11 +135,11 @@ export const WindowHeader: React.FC = () => {
         {activeJobs.length > 0 && (
           <button
             onClick={toggleOperationQueue}
-            title={`${activeJobs.length} transfers in progress (${avgProgress}%)`}
+            title={`${activeJobs.length} transfers in progress${progressAvailable ? ` (${avgProgress}%)` : ''}`}
             className="flex items-center gap-1.5 px-2.5 py-1 rounded-[10px] bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-[var(--accent)] hover:bg-[var(--bg-hover)] transition-colors animate-pulse"
           >
             <Activity className="w-3 h-3" />
-            <span className="font-mono text-[11px] font-semibold">{avgProgress}%</span>
+            <span className="font-mono text-[11px] font-semibold">{progressAvailable ? `${avgProgress}%` : `${activeJobs.length} active`}</span>
           </button>
         )}
 

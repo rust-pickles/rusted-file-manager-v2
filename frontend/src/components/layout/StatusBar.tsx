@@ -61,7 +61,7 @@ export const StatusBar: React.FC = () => {
           >
             <Activity className="w-3 h-3 animate-pulse text-[var(--accent)]" />
             <span>
-              {runningOperations[0].title} ({runningOperations[0].progress}%)
+              {runningOperations[0].title}{runningOperations[0].progressAvailable ? ` (${runningOperations[0].progress}%)` : ''}
             </span>
           </button>
         ) : recentCompleted ? (
