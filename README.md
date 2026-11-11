@@ -1,20 +1,45 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# RUSTED
 
-# Run and deploy your AI Studio app
+RUSTED is a Windows 10/11 x64 file manager in development. This repository
+contains the AI Studio React interface and the existing Rust engine workspace.
+The frontend currently uses an in-memory mock filesystem; it is **not** yet
+connected to the Rust engine and is not a desktop application. The Rust app and
+GPUI frontend crates are currently stubs. GPUI remains declared pending a later,
+separately approved migration to Tauri.
 
-This contains everything you need to run your app locally.
+## Layout
 
-View your app in AI Studio: https://ai.studio/apps/4d053914-512b-4cfb-b714-44e48012bf02
+- `frontend/` — React, TypeScript, Vite and Tailwind UI.
+- `crates/` — existing Rust workspace crates, including `rusted-app` and
+  `rusted-ui`. The root `Cargo.toml` defines the workspace.
+- `.github/workflows/ci.yml` — Windows frontend and Rust checks.
 
-## Run Locally
+No `src-tauri/` exists yet: Tauri integration is deliberately outside Phase 0.
+The original Rust repository remains an independent backup.
 
-**Prerequisites:**  Node.js
+## Frontend
 
+Use Node.js 22.12 or later (CI uses Node 22), with npm:
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+```sh
+cd frontend
+npm ci
+npm run lint
+npm run build
+npm run dev
+```
+
+The committed `package-lock.json` is the frontend dependency lockfile.
+
+## Rust
+
+Use stable Rust (minimum 1.90) and the `x86_64-pc-windows-msvc` target on
+Windows with the MSVC build tools:
+
+```sh
+cargo check --workspace --all-targets
+cargo test --workspace
+```
+
+The workspace currently has no committed Cargo.lock; dependency resolution can
+therefore vary between runs. These commands do not start an application yet.
