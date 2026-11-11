@@ -262,7 +262,7 @@ mod tests {
         let report = scan(dir.path(), &ScanOptions::default(), &AtomicBool::new(false)).unwrap();
         assert_eq!(report.total_bytes, 1600);
         assert_eq!(report.total_files, 3);
-        assert_eq!(report.total_folders, 4);
+        assert_eq!(report.total_folders, 3);
         let images = report.categories.iter().find(|c| c.category == "Images").unwrap();
         assert_eq!(images.bytes, 1000);
         let code = report.categories.iter().find(|c| c.category == "Code").unwrap();

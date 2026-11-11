@@ -219,7 +219,9 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let mut stack = UndoStack::new(2);
         for index in 0..5 {
-            stack.record(JournalEntry::CreateFile { path: dir.path().join(format!("f{index}")) });
+            let path = dir.path().join(format!("f{index}"));
+            fs::write(&path, b"").unwrap();
+            stack.record(JournalEntry::CreateFile { path });
         }
         assert_eq!(stack.undo.len(), 2);
         stack.undo().unwrap();

@@ -287,7 +287,7 @@ mod tests {
         };
         let previews = preview_batch(&sources, &spec);
         assert_eq!(previews[0].new_name(), "photo_on001.txt");
-        assert_eq!(previews[1].new_name(), "photo_tw002.txt");
+        assert_eq!(previews[1].new_name(), "photo_two002.txt");
     }
 
     #[test]

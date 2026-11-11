@@ -288,10 +288,10 @@ mod tests {
     #[test]
     fn moving_last_tab_prunes_empty_source() {
         let mut workspace = Workspace::new("a".into(), ViewMode::Details);
-        let id = workspace.active_tab().id;
+        let other = workspace.active_tab().id;
+        let id = workspace.new_tab("b".into(), ViewMode::Details);
         let destination = workspace.move_or_split_tab(id, workspace.active_pane, DropZone::Left).unwrap();
         assert_eq!(workspace.root.pane_count(), 2);
-        let other = workspace.active_tab().id;
         workspace.move_or_split_tab(other, destination, DropZone::Center).unwrap();
         assert_eq!(workspace.root.pane_count(), 1);
         assert_eq!(workspace.active_pane().tabs.len(), 2);
@@ -300,10 +300,8 @@ mod tests {
     #[test]
     fn close_pane_merges_all_tabs_into_neighbour() {
         let mut workspace = Workspace::new("a".into(), ViewMode::Details);
-        let id = workspace.active_tab().id;
+        let id = workspace.new_tab("b".into(), ViewMode::Details);
         let destination = workspace.move_or_split_tab(id, workspace.active_pane, DropZone::Right).unwrap();
-        workspace.focus_pane(destination);
-        workspace.new_tab("b".into(), ViewMode::Details);
         let merged = workspace.close_pane_merge(destination).unwrap();
         assert_eq!(merged.len(), 1);
         assert_eq!(workspace.root.pane_count(), 1);
@@ -314,7 +312,7 @@ mod tests {
     fn resize_is_bounded() {
         let mut workspace = Workspace::new("a".into(), ViewMode::Details);
         let original = workspace.active_pane;
-        let id = workspace.active_tab().id;
+        let id = workspace.new_tab("b".into(), ViewMode::Details);
         let destination = workspace.move_or_split_tab(id, original, DropZone::Right).unwrap();
         assert!(workspace.resize(original, destination, 2.0));
         match workspace.root {
@@ -350,7 +348,7 @@ mod tests {
     fn tab_focus_cycles_in_layout_order() {
         let mut workspace = Workspace::new("a".into(), ViewMode::Details);
         let first = workspace.active_pane;
-        let id = workspace.active_tab().id;
+        let id = workspace.new_tab("b".into(), ViewMode::Details);
         let second = workspace.move_or_split_tab(id, first, DropZone::Right).unwrap();
         workspace.focus_pane(first);
         workspace.cycle_pane();
@@ -362,8 +360,10 @@ mod tests {
     #[test]
     fn duplicate_and_rename_tab() {
         let mut workspace = Workspace::new("a".into(), ViewMode::Grid);
+        let original = workspace.active_tab().id;
         let copy = workspace.duplicate_tab().unwrap();
-        assert_ne!(copy, workspace.active_tab().id);
+        assert_ne!(copy, original);
+        assert_eq!(copy, workspace.active_tab().id);
         assert!(workspace.rename_tab(copy, Some("Pinned".into())));
         assert_eq!(workspace.tab(copy).unwrap().title(), "Pinned");
         assert!(workspace.rename_tab(copy, None));
